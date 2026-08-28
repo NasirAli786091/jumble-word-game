@@ -201,8 +201,6 @@ GITHUB_CLIENT_SECRET="your_github_client_secret"
 GROQ_API_KEY="your_groq_api_key"
 ```
 
-> **Never commit `.env.local` or any file containing API keys, database credentials, or authentication secrets to GitHub.**
-
 ## 🚀 Getting Started
 
 ### 1. Clone the repository
