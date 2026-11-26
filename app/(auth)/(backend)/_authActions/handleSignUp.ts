@@ -52,7 +52,7 @@ export const handleSignUp = async (data: RegisterSchemaData) => {
         }
         
     } catch (error) {
-        console.log("error at registered ",error);
+        console.error("error at registered ",error);
         return{
             success: false,
             message: "Something went wrong!"
