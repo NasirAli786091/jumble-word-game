@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useEffect, useRef } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { socket } from "@/lib/socket";
 import { useSession } from "next-auth/react";
 
@@ -8,45 +8,50 @@ const SocketContext = createContext(socket);
 
 export const useSocket = () => useContext(SocketContext);
 
-export default function SocketProvider(
-    { children }: { children: React.ReactNode }
-) {
+export default function SocketProvider({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
     const { status, data: session } = useSession();
-    const registeredRef = useRef(false);
+    const userId = session?.user?.id;
 
     useEffect(() => {
-        if (status !== "authenticated") return;
-        if(!session?.user?.id) return;
+        if (status !== "authenticated" || !userId) return;
 
-        if(!socket.connected){
-            socket.connect();
-        }
-        
         const onConnect = () => {
-            console.log("socket connected", socket.id);
+            console.log("Socket connected:", socket.id);
+            socket.emit("register-user", userId);
+        };
 
-            if(!registeredRef.current){
-                socket.emit("register-user", session?.user?.id);
-                registeredRef.current = true;
-            }   
-        }
+        const onConnectError = (error: Error) => {
+            console.error("Socket connection error:", error.message);
+        };
 
         socket.on("connect", onConnect);
+        socket.on("connect_error", onConnectError);
+
+        if (socket.connected) {
+            onConnect();
+        } else {
+            socket.connect();
+        }
+
         return () => {
             socket.off("connect", onConnect);
-        }
-    }, [status, session]);
+            socket.off("connect_error", onConnectError);
+        };
+    }, [status, userId]);
 
     useEffect(() => {
-        if(status === "unauthenticated"){
+        if (status === "unauthenticated") {
             socket.disconnect();
-            registeredRef.current = false;
-        } 
+        }
     }, [status]);
 
     return (
         <SocketContext.Provider value={socket}>
             {children}
         </SocketContext.Provider>
-    )
+    );
 }
