@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Word Work",
+  title: "Score Word",
   description: "create Word by random letters",
 };
 

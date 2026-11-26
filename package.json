@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx src/server/index.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "tsx src/server/index.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -49,7 +49,7 @@
     "eslint-config-next": "16.2.6",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
-    "tsx": "^4.22.3",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

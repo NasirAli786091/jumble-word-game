@@ -14,7 +14,15 @@ export function handleMatchmaking(io: Server, socket: Socket) {
 
     if (!userId) return;
 
-    if(matchmakingQueue.some((s) => s.id === socket.id)) return;
+    // Prevent duplicate users
+    if (
+      matchmakingQueue.some(
+        (s) => s.data.userId === userId
+      )
+    ) {
+      socket.emit("already-in-queue");
+      return;
+    }
 
     matchmakingQueue.push(socket);
 
@@ -26,7 +34,12 @@ export function handleMatchmaking(io: Server, socket: Socket) {
     const p1 = matchmakingQueue.shift()!;
     const p2 = matchmakingQueue.shift()!;
 
-    const roomId = `room-${roomCounter++}`;
+    // Safety check
+    if (p1.data.userId === p2.data.userId) {
+      matchmakingQueue.unshift(p2);
+      p1.emit("waiting");
+      return;
+    } const roomId = `room-${roomCounter++}`;
 
     // 1. create game ONCE
     await createRoomGame(roomId, p1.data.userId, p2.data.userId);
