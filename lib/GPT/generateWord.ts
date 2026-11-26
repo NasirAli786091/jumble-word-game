@@ -65,27 +65,39 @@ function pickRandomWord(length: number): string {
 }
 
 async function lookupWord(word: string): Promise<WordData | null> {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+    try {
+        const res = await fetch(
+            `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
+        );
 
-    if (!res.ok) {
-        return null; // word not found in dictionary — caller should retry with a new word
-    }
+        if (!res.ok) {
+            console.log(
+                `Dictionary lookup failed: word=${word}, status=${res.status}`
+            );
+            return null;
+        }
 
-    const data = await res.json();
-    const entry = data[0];
-    const meaning = entry.meanings?.[0];
-    const definition = meaning?.definitions?.[0];
+        const data = await res.json();
+        const entry = data[0];
+        const meaning = entry?.meanings?.[0];
+        const definition = meaning?.definitions?.[0];
 
-    if (!meaning || !definition) {
+        if (!meaning || !definition) {
+            console.log(`Missing definition fields for: ${word}`);
+            return null;
+        }
+
+        return {
+            word: entry.word,
+            part_of_speech: meaning.partOfSpeech,
+            definition: definition.definition,
+            example: definition.example ?? "",
+        };
+
+    } catch (error) {
+        console.error(`Dictionary API error for ${word}:`, error);
         return null;
     }
-
-    return {
-        word: entry.word,
-        part_of_speech: meaning.partOfSpeech,
-        definition: definition.definition,
-        example: definition.example ?? "",
-    };
 }
 
 export async function getRandomWord(length = 5, maxAttempts = 8): Promise<WordData> {
