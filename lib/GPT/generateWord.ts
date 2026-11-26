@@ -1,3 +1,4 @@
+
 import { Groq } from "groq-sdk";
 
 const groq = new Groq({
@@ -11,9 +12,12 @@ type WordData = {
     example: string;
 };
 
+// Stores words already generated during this server process
+const usedWords = new Set<string>();
+
 export async function getRandomWord(
     length = 5,
-    maxAttempts = 3
+    maxAttempts = 8
 ): Promise<WordData> {
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -26,6 +30,9 @@ export async function getRandomWord(
                 {
                     role: "user",
                     content: `Generate one valid, commonly recognized English word with exactly ${length} letters.
+
+Do not generate any of these previously used words:
+${Array.from(usedWords).join(", ")}
 
 Return JSON in this format:
 {
@@ -45,23 +52,34 @@ Return JSON in this format:
         try {
             const result = JSON.parse(content) as WordData;
 
+            if (typeof result.word !== "string") continue;
+
+            const word = result.word.trim().toLowerCase();
+
             if (
-                typeof result.word === "string" &&
-                result.word.trim().length === length &&
-                /^[a-zA-Z]+$/.test(result.word.trim()) &&
+                word.length === length &&
+                /^[a-z]+$/.test(word) &&
+                !usedWords.has(word) &&
                 typeof result.definition === "string" &&
                 typeof result.part_of_speech === "string" &&
                 typeof result.example === "string"
             ) {
+                usedWords.add(word);
+
                 return {
                     ...result,
-                    word: result.word.trim().toLowerCase(),
+                    word,
                 };
             }
+
+            console.log("Invalid or duplicate word generated:", word);
+
         } catch {
             console.log("Invalid JSON received from Groq");
         }
     }
 
-    throw new Error("Could not generate a valid word");
+    throw new Error(
+        `Could not generate a new valid ${length}-letter word after ${maxAttempts} attempts`
+    );
 }
